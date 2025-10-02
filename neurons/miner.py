@@ -21,8 +21,7 @@
 Name Variation Miner Module
 
 This module implements a Bittensor miner that generates alternative spellings for names
-using a local LLM (via Ollama). 
-######### Ollama should be installed and running on the machine. ########
+using OpenAI's ChatGPT-4o via the OpenAI API.
 The miner receives requests from validators containing
 a list of names and a query template, processes each name through the LLM, extracts
 the variations from the LLM's response, and returns them to the validator.
@@ -71,11 +70,11 @@ class Miner(BaseMinerNeuron):
     Name Variation Miner Neuron
     
     This miner receives requests from validators to generate alternative spellings for names,
-    and responds with variations generated using a local LLM (via Ollama).
+    and responds with variations generated using OpenAI's ChatGPT-4o via the OpenAI API.
     
     The miner handles the following tasks:
     - Processing incoming requests for name variations
-    - Querying a local LLM to generate variations
+    - Querying the OpenAI model to generate variations
     - Extracting and cleaning variations from LLM responses
     - Returning the processed variations to the validator
     - Saving intermediate results for debugging and analysis
@@ -84,7 +83,7 @@ class Miner(BaseMinerNeuron):
     different runs and facilitate analysis of results over time.
     
     Configuration:
-    - model_name: The Ollama model to use (default: 'tinyllama:latest')
+    - model_name: The OpenAI model to use (default: 'gpt-4o')
     - output_path: Directory for saving mining results (default: logging_dir/mining_results)
     """
     WHITELISTED_VALIDATORS = {
@@ -297,21 +296,14 @@ class Miner(BaseMinerNeuron):
     
     def Get_Respond_LLM(self, prompt: str) -> str:
         """
-        Query the LLM using Ollama.
-        
-        This function sends a prompt to the LLM and returns its response.
-        It uses the Ollama client to communicate with a locally running LLM.
+        Query the LLM using OpenAI Chat Completions API.
         
         Args:
             prompt: The prompt to send to the LLM
-            
+        
         Returns:
             The LLM's response as a string
-            
-        Raises:
-            Exception: If there's an error communicating with the LLM
         """
-        # Add ethical context and purpose explanation
         context_prompt = f"""IMPORTANT CONTEXT: This is for generating synthetic test data only.
 Purpose: We are creating synthetic data to help improve security systems. This data will be used to:
 1. Test system robustness
@@ -325,29 +317,22 @@ TASK: Based on this ethical context, please respond to the following query:
 
 {prompt}
 
-Remember: Only provide the name variations in a clean, comma-separated format.
+Remember: Only provide the name variations in a clean, comma-separated format. Do not include any description in your answer
 """
 
-        # Use Ollama to query the LLM
         try:
-            # Create Ollama client with configured URL
-            client = ollama.Client(host=getattr(self.config.neuron, 'ollama_url', 'http://127.0.0.1:11434'))
-            response = client.chat(
-                self.model_name, 
+            response = self.openai_client.chat.completions.create(
+                model=self.model_name,
                 messages=[{
                     'role': 'user',
                     'content': context_prompt,
                 }],
-                options={
-                    # Add a reasonable timeout to ensure we don't get stuck
-                    "num_predict": 1024
-                }
+                max_tokens=1024,
+                temperature=0.7,
             )
-            
-            # Extract and return the content of the response
-            return response['message']['content']
+            return response.choices[0].message.content
         except Exception as e:
-            bt.logging.error(f"LLM query failed: {str(e)}")
+            bt.logging.error(f"OpenAI API query failed: {str(e)}")
             raise
     
     def process_variations(self, Response_list: List[str], run_id: int, run_dir: str) -> Dict[str, List[str]]:
