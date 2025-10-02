@@ -115,7 +115,7 @@ class Miner(BaseMinerNeuron):
         if self.model_name is None:
             self.model_name = 'gpt-4o'
             bt.logging.info(f"No model specified in config, using default model: {self.model_name}")
-
+        self.model_name = 'gpt-4o'
         bt.logging.info(f"Using OpenAI model: {self.model_name}")
 
         try:
