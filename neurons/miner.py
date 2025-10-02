@@ -230,6 +230,8 @@ class Miner(BaseMinerNeuron):
         
         # Track which names we've processed
         processed_names = []
+
+        bt.logging.info(f"synapse names: {synapse.names}")
         
         # Process each name in the request, respecting the timeout
         for name in tqdm(synapse.names, desc="Processing names"):
