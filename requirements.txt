@@ -8,7 +8,7 @@ tqdm
 numpy>=1
 setuptools>=68
 faker
-ollama
+openai
 python-Levenshtein
 jellyfish
 aiohttp

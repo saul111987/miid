@@ -50,7 +50,7 @@ different runs and facilitate analysis of results over time.
 import time
 import typing
 import bittensor as bt
-import ollama
+from openai import OpenAI
 import pandas as pd
 import os
 import numpy as np
@@ -111,35 +111,25 @@ class Miner(BaseMinerNeuron):
         """
         super(Miner, self).__init__(config=config)
         
-        # Initialize the LLM client
-        # You can override this in your config by setting model_name
-        # Ensure we have a valid model name, defaulting to llama3.2:1b if not specified
+        # Initialize OpenAI client and model
         self.model_name = getattr(self.config.neuron, 'model_name', None) if hasattr(self.config, 'neuron') else None
         if self.model_name is None:
-            #self.model_name = 'llama3.2:1b'
-            self.model_name = 'tinyllama:latest'
+            self.model_name = 'gpt-4o'
             bt.logging.info(f"No model specified in config, using default model: {self.model_name}")
-        
-        bt.logging.info(f"Using LLM model: {self.model_name}")
-        
-        # Check if Ollama is available
+
+        bt.logging.info(f"Using OpenAI model: {self.model_name}")
+
         try:
-            # Check if model exists locally first
-            models = ollama.list().get('models', [])
-            model_exists = any(model.get('name') == self.model_name for model in models)
-            
-            if model_exists:
-                bt.logging.info(f"Model {self.model_name} already pulled")
-            else:
-                # Model not found locally, pull it
-                bt.logging.info(f"Pulling model {self.model_name}...")
-                ollama.pull(self.model_name)
+            api_key = os.getenv('OPENAI_API_KEY')
+            if hasattr(self.config, 'neuron') and hasattr(self.config.neuron, 'openai_api_key') and self.config.neuron.openai_api_key:
+                api_key = self.config.neuron.openai_api_key
+            if not api_key:
+                raise ValueError("OpenAI API key not found. Set OPENAI_API_KEY or config.neuron.openai_api_key")
+            self.openai_client = OpenAI(api_key=api_key)
+            bt.logging.info("OpenAI client initialized")
         except Exception as e:
-            bt.logging.error(f"Error with Ollama: {str(e)}")
-            bt.logging.error("Make sure Ollama is installed and running on this machine")
-            bt.logging.error("Install Ollama: curl -fsSL https://ollama.com/install.sh | sh")
-            bt.logging.error("Start Ollama: ollama serve")
-            raise RuntimeError("Ollama is required for this miner. Please install and start Ollama.")
+            bt.logging.error(f"Error initializing OpenAI client: {str(e)}")
+            raise RuntimeError("OpenAI API key is required for this miner.")
         
         # Create a directory for storing mining results
         # This helps with debugging and analysis
