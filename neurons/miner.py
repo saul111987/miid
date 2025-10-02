@@ -261,6 +261,7 @@ class Miner(BaseMinerNeuron):
                 bt.logging.info(f"Generating variations for name: {name}, remaining time: {remaining:.1f}s")
                 # Pass a more limited timeout to the LLM call to ensure we stay within bounds
                 name_respond = self.Get_Respond_LLM(formatted_query)
+                bt.logging.info(f"Get_Respond_LLM: {name_respond}")
                 Response_list.append(name_respond)
                 processed_names.append(name)
             except Exception as e:
