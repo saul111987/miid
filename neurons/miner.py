@@ -264,6 +264,7 @@ class Miner(BaseMinerNeuron):
                 # Pass a more limited timeout to the LLM call to ensure we stay within bounds
                 name_respond = self.Get_Respond_LLM(formatted_query)
                 bt.logging.info(f"Get_Respond_LLM: {name_respond}")
+                bt.logging.info(f"formatted_query: {formatted_query}")
                 Response_list.append(name_respond)
                 processed_names.append(name)
             except Exception as e:
@@ -283,7 +284,6 @@ class Miner(BaseMinerNeuron):
         # Only proceed with processing if we have enough time
         if remaining > 1.0:  # Ensure at least 1 second for processing
             variations = self.process_variations(Response_list, run_id, run_dir)
-            bt.logging.info(f"======== Response_list ===============================================: {Response_list}")
             bt.logging.info(f"======== FINAL VARIATIONS===============================================: {variations}")
             # Set the variations in the synapse for return to the validator
             synapse.variations = variations
