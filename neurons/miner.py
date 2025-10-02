@@ -231,8 +231,6 @@ class Miner(BaseMinerNeuron):
         # Track which names we've processed
         processed_names = []
 
-        bt.logging.info(f"synapse names: {synapse.names}")
-        
         # Process each name in the request, respecting the timeout
         for name in tqdm(synapse.names, desc="Processing names"):
             # Check if we're approaching the timeout (reserve 15% for processing)
@@ -254,6 +252,9 @@ class Miner(BaseMinerNeuron):
             Response_list.append("---")
             Response_list.append("Query-" + name)
             Response_list.append("---")
+
+            bt.logging.info(f"synapse query template: {synapse.query_template}")
+            bt.logging.info(f"name: {name}")
             
             # Format the query with the current name
             formatted_query = synapse.query_template.replace("{name}", name)
